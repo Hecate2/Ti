@@ -4,7 +4,6 @@ ti.init(arch=ti.gpu)
 
 num_digits = 4
 
-initial_nums = ti.field(dtype=ti.uint32, shape=10 ** num_digits)
 valid_guesses = ti.field(dtype=ti.uint8, shape=10 ** num_digits)
 digits = ti.field(dtype=ti.uint8, shape=(10 ** num_digits, num_digits))
 """
@@ -50,9 +49,7 @@ def no_duplicate_digits():
 
 @ti.kernel
 def get_initial_nums():
-    for i in initial_nums:
-        initial_nums[i] = i
-        valid_guesses[i] = 1
+    valid_guesses.fill(1)
     get_digits()
     no_duplicate_digits()
 
@@ -94,3 +91,4 @@ while result_guesses.shape[0] > 1:
     result_guesses = np.where(valid_guesses.to_numpy() != 0)[0]
     print(result_guesses.shape)
     print(result_guesses)
+ti.profiler.print_scoped_profiler_info()
