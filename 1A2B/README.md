@@ -13,7 +13,7 @@ Whenever the guesser guesses a number, the host should answer a string `aAbB`, w
 [8317]	4A0B (correct answer!)
 ```
 
-This program helps the guesser filter the impossible answers with GPU. It prints the answer to be provided to the host, and it's your job to input `a` and `b` back to the program. (No need to input `aAbB`. You can just type `a b`.) Then the program will print all the remaining possible solutions, and (naively) select the smallest number as the next answer. 
+The program [1a2b_gpu.py](1a2b_gpu.py) helps the guesser filter the impossible answers with GPU. It prints the answer to be provided to the host, and it's your job to input `a` and `b` back to the program. (No need to input `aAbB`. You can just type `a b`.) Then the program will print all the remaining possible solutions, and (naively) select the smallest number as the next answer. 
 
 ```
 Rhantolk@HISTORIA C:\Users\RhantolkYtriHistoria
@@ -62,5 +62,5 @@ Rhantolk@HISTORIA C:\Users\RhantolkYtriHistoria
 [8317]
 ```
 
-In the future we may also consider choosing a number which generates the largest expected amount of information. My friend `bsTiat` (also known as `bluespace`) has already tried the strategy with CPU, earning a small but significant benefit. 
+We have also written [1a2b_gpu_best_strategy.py](1a2b_gpu_best_strategy.py) which chooses a number generating the largest expected amount of information. `bsTiat` (also known as `bluespace`) has already tried the strategy with CPU, earning a small but significant benefit. 
 
