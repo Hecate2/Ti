@@ -64,3 +64,4 @@ Rhantolk@HISTORIA C:\Users\RhantolkYtriHistoria
 
 We have also written [1a2b_gpu_best_strategy.py](1a2b_gpu_best_strategy.py) which chooses a number generating the largest expected amount of information. `bsTiat` (also known as `bluespace`) has already tried the strategy with CPU, earning a small but significant benefit. 
 
+Do not write nested `for i in ti.static(range(LARGE_NUMBER))` at a large scale. The JIT compiler of taichi always tries to unfold these static- or struct-`for`s to be parallel. If you write double nested static- or struct-fors, it can cost forever to compile. Just write `for i in range(LARGE_NUMBER)` to prevent slow compilation. 
