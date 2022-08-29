@@ -62,6 +62,24 @@ Rhantolk@HISTORIA C:\Users\RhantolkYtriHistoria
 [8317]
 ```
 
-We have also written [1a2b_gpu_best_strategy.py](1a2b_gpu_best_strategy.py) which chooses a number generating the largest expected amount of information. `bsTiat` (also known as `bluespace`) has already tried the strategy with CPU, earning a small but significant benefit. 
+We have also written [1a2b_gpu_best_strategy.py](1a2b_gpu_best_strategy.py) which chooses a number generating the largest expected amount of information. `bsTiat` (also known as `bluespace`) has already tried the strategy with CPU, earning a small but significant benefit. Our GPU implementation on RTX 2070 laptop + Ryzen 3600 on a laptop, consuming 80W GPU power + 45W CPU power:
+
+```
+[Taichi] version 1.1.2, llvm 10.0.0, commit f25cf4a2, win, python 3.8.10
+[Taichi] Starting on arch=cuda
+time cost: 131.16091132164001 seconds with 10000 tries
+min: 2, avg: 5.0619, max: 7
+```
+
+```
+[Taichi] version 1.1.2, llvm 10.0.0, commit f25cf4a2, win, python 3.8.10
+[Taichi] Starting on arch=cuda
+time cost: 131.28192949295044 with 10000 tries
+min: 2, avg: 5.0572, max: 7
+```
+
+This is much much much faster than the single-core CPU version in C++, which costs more than 1.5 hours for 10000 simulations. 
+
+#### Compilation hints
 
 Do not write nested `for i in ti.static(range(LARGE_NUMBER))` at a large scale. The JIT compiler of taichi always tries to unfold these static- or struct-`for`s to be parallel. If you write double nested static- or struct-fors, it can cost forever to compile. Just write `for i in range(LARGE_NUMBER)` to prevent slow compilation. 

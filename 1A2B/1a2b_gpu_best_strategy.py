@@ -1,3 +1,7 @@
+from multiprocessing import cpu_count
+cpu_count = cpu_count()
+import time
+from typing import Dict, Tuple
 import numpy as np
 import taichi as ti
 ti.init(arch=ti.gpu, device_memory_GB=3)
@@ -44,7 +48,7 @@ def no_duplicate_digits():
             # if num == 1:
             #     print(num, d, j, digits[num, d] == digits[num, j])
             if d != j and digits[num, d] == digits[num, j]:
-                valid_guesses[num] = 0
+                valid_guesses[num] = ti.cast(0, ti.uint8)
                 # break  # WATCH THIS!
                 # The `break` might have been compiled
                 # outside this `if` clause
@@ -55,16 +59,17 @@ def compute_A_and_B():
     guess_to_answer_A_and_B_sum.fill(0)
     for solution in range(num_numbers):
         if valid_guesses[solution] != 0:
+            ti.loop_config(block_dim=128, parallelize=cpu_count)
             for guess in range(num_numbers):
                 if valid_guesses[guess] != 0:
                     for d_guess in ti.static(range(num_digits)):
-                        vectorA = ti.Vector([0] * num_digits)
-                        vectorB = ti.Vector([0] * num_digits)
+                        vectorA = ti.Vector([0] * num_digits, dt=ti.uint8)
+                        vectorB = ti.Vector([0] * num_digits, dt=ti.uint8)
                         if digits[solution, d_guess] == digits[guess, d_guess]:
-                            vectorA[d_guess] = 1
+                            vectorA[d_guess] = ti.cast(1, ti.uint8)
                         for d_solution in ti.static(range(num_digits)):
                             if d_solution != d_guess and digits[solution, d_solution] == digits[guess, d_guess]:
-                                vectorB[d_guess] = 1
+                                vectorB[d_guess] = ti.cast(1, ti.uint8)
                         sum_vectorA = vectorA.sum()
                         guess_to_answer_A_and_B_sum[solution, guess, 0] = sum_vectorA
                         guess_to_answer_A_and_B_sum[guess, solution, 0] = sum_vectorA
@@ -73,7 +78,7 @@ def compute_A_and_B():
                         guess_to_answer_A_and_B_sum[guess, solution, 1] = sum_vectorB
 
 
-@ti.func
+@ti.kernel
 def initialize_one_game():
     valid_guesses.fill(1)
     no_duplicate_digits()
@@ -83,7 +88,8 @@ def initialize_one_game():
 def initialize():
     get_digits()
     compute_A_and_B()
-    initialize_one_game()
+    valid_guesses.fill(1)
+    no_duplicate_digits()
 
 
 @ti.kernel
@@ -123,6 +129,7 @@ def find_best_guess():
         if valid_guesses[actual_answer] == 0:
             remaining_guesses_if_guess_this[actual_answer] = ti.cast(2 ** 31 - 1, ti.uint32)
         else:
+            ti.loop_config(block_dim=128, parallelize=cpu_count)
             for next_guess in range(num_numbers):
                 for a in ti.static(range(num_digits + 1)):
                     for b in ti.static(range(num_digits + 1 - a)):
@@ -131,18 +138,76 @@ def find_best_guess():
 
 
 initialize()
-ti.sync()
 # ti.profiler.print_scoped_profiler_info()
 # print(digits)
 # print(initial_nums)
 # print(valid_guesses)
 # result_guesses = np.where(valid_guesses.to_numpy() != 0)[0]
 # print(result_guesses)
-while (valid_guesses_shape := np.where(valid_guesses.to_numpy() != 0)[0].shape[0]) > 0:
-    find_best_guess()
-    sorted_suggested_guesses = remaining_guesses_if_guess_this.to_numpy().argsort()
-    suggested_guess = int(sorted_suggested_guesses[0])
-    print(valid_guesses_shape)
-    print(str(sorted_suggested_guesses[0]).zfill(num_digits), end='\t')
-    A, B = map(int, input().split())
-    reduce_possible_guesses(suggested_guess, A, B)
+
+
+def play_once():
+    while (valid_guesses_shape := np.where(valid_guesses.to_numpy() != 0)[0].shape[0]) > 0:
+        find_best_guess()
+        sorted_suggested_guesses = remaining_guesses_if_guess_this.to_numpy().argsort()
+        suggested_guess = int(sorted_suggested_guesses[0])
+        print(valid_guesses_shape)
+        print(str(sorted_suggested_guesses[0]).zfill(num_digits), end='\t')
+        A, B = map(int, input().split())
+        reduce_possible_guesses(suggested_guess, A, B)
+
+
+def test():
+    print('You are testing the performance of this program')
+    print('Call play_once() instead of test() to play 1A2B with IntelligentIthea using the best strategy')
+    print('1000 simulations cost around 15 seconds on RTX 2070 at 80 Watts')
+    print('Please wait for simulation...')
+    import random
+    
+    def gen_solution() -> Dict[int, int]:
+        digits = random.sample("0123456789", num_digits)  # ['3','6','2','0']
+        return {int(d): num_digits - i - 1 for i, d in enumerate(digits)}  # {3:3, 6:2, 2:1, 0:0}
+    
+    def gen_A_B(solution: Dict[int, int], guess: int) -> Tuple[int, int]:
+        guess_dict = dict()
+        for i in range(num_digits):
+            guess_dict[i] = guess % 10
+            guess = guess // 10
+        A, B = 0, 0
+        for k, v in guess_dict.items():
+            if k in solution:
+                if solution[k] == v:
+                    A += 1
+                else:
+                    B += 1
+        return A, B
+    
+    initialize()
+    total_guesses = 0
+    max_guesses = 0
+    min_guesses = 100
+    tries = 1000
+    start_time = time.time()
+    for i in range(tries):
+        game_guesses = 0
+        solution = gen_solution()
+        initialize_one_game()
+        while (np.where(valid_guesses.to_numpy() != 0)[0].shape[0]) > 0:
+            find_best_guess()
+            sorted_suggested_guesses = remaining_guesses_if_guess_this.to_numpy().argsort()
+            suggested_guess = int(sorted_suggested_guesses[0])
+            total_guesses += 1
+            game_guesses += 1
+            A, B = gen_A_B(solution, suggested_guess)
+            reduce_possible_guesses(suggested_guess, A, B)
+        if game_guesses < min_guesses:
+            min_guesses = game_guesses
+        if game_guesses > max_guesses:
+            max_guesses = game_guesses
+    end_time = time.time()
+    print(f'time cost: {end_time - start_time} seconds with {tries} tries')
+    print(f'min: {min_guesses}, avg: {total_guesses/tries}, max: {max_guesses}')
+
+
+# play_once()
+test()
