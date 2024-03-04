@@ -133,7 +133,7 @@ def find_best_guess():
             for next_guess in range(num_numbers):
                 for a in ti.static(range(num_digits + 1)):
                     for b in ti.static(range(num_digits + 1 - a)):
-                        if guess_to_answer_A_and_B_sum[actual_answer, next_guess, 0] == a and guess_to_answer_A_and_B_sum[actual_answer, next_guess, 0] == b:
+                        if guess_to_answer_A_and_B_sum[actual_answer, next_guess, 0] == a and guess_to_answer_A_and_B_sum[actual_answer, next_guess, 1] == b:
                             remaining_guesses_if_guess_this[next_guess] += 1
 
 
@@ -188,7 +188,7 @@ def test():
     min_guesses = 100
     tries = 1000
     start_time = time.time()
-    for i in range(tries):
+    for i in range(1, tries+1):
         game_guesses = 0
         solution = gen_solution()
         initialize_one_game()
@@ -204,6 +204,8 @@ def test():
             min_guesses = game_guesses
         if game_guesses > max_guesses:
             max_guesses = game_guesses
+        if i % 100 == 0:
+            print(f"Finished {i}-th game")
     end_time = time.time()
     print(f'time cost: {end_time - start_time} seconds with {tries} tries')
     print(f'min: {min_guesses}, avg: {total_guesses/tries}, max: {max_guesses}')

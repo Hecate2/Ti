@@ -67,15 +67,8 @@ We have also written [1a2b_gpu_best_strategy.py](1a2b_gpu_best_strategy.py) whic
 ```
 [Taichi] version 1.1.2, llvm 10.0.0, commit f25cf4a2, win, python 3.8.10
 [Taichi] Starting on arch=cuda
-time cost: 131.16091132164001 seconds with 10000 tries
-min: 2, avg: 5.0619, max: 7
-```
-
-```
-[Taichi] version 1.1.2, llvm 10.0.0, commit f25cf4a2, win, python 3.8.10
-[Taichi] Starting on arch=cuda
-time cost: 131.28192949295044 with 10000 tries
-min: 2, avg: 5.0572, max: 7
+time cost: 229.4321093559265 seconds with 10000 tries
+min: 2, avg: 4.9235, max: 7
 ```
 
 This is much much much faster than the single-core CPU version in C++, which costs more than 1.5 hours for 10000 simulations. 
